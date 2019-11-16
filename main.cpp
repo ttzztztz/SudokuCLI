@@ -1,6 +1,10 @@
 #include <iostream>
+#include "game_control.h"
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    game_control g;
+    g.init();
+    g.print_notice("おはようございます");
+
     return 0;
 }
