@@ -1,37 +1,29 @@
 #include <optional>
 #include <tuple>
+#include "game_state.h"
 
 #ifndef SUDOKU_GAME_H
 #define SUDOKU_GAME_H
 
-const int N = 9;
-const int M = 3;
-
 class game_control {
 private:
-    int map[N][N];
-    bool readOnly[N][N];
+    game_state state;
 
-    std::pair<int, int> unsafe_calcOffset(std::tuple<int, int, int> in);
+    static std::pair<int, int> unsafe_calc_offset(std::tuple<int, int, int> in);
 
     void print();
 
-    void interactive(const std::string &extra);
+    static void interactive(const std::string &extra);
 
 public:
     friend class game_alg;
 
     game_control();
 
-    void print_notice(const std::string &extra);
-
     void init();
 
-    void control();
+    void loop();
 
-    std::optional<std::tuple<int, int, int>> input_offset();
-
-    std::optional<int> input_value();
 };
 
 

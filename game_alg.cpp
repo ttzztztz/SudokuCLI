@@ -2,25 +2,18 @@
 
 #include "game_alg.h"
 
-bool game_alg::check_valid(game_control *control) {
-    int col[N], row[N], table[M][M];
-    memset(col, 0, sizeof(col));
-    memset(row, 0, sizeof(row));
-    memset(table, 0, sizeof(table));
+bool game_alg::can_place(const game_state &state, int i, int j, int number) {
+    // O(1)
+    const int bit = 1 << (number - 1);
+    return !((state.row[i] & bit) || (state.col[j] & bit) || (state.table[i][j] & bit));
+}
 
+bool game_alg::check_win(const game_state &state) {
+    // O(N)
+    const int mask = (1 << N) - 1;
     for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            const int number = control->map[i][j];
-            if (number == -1) {
-                continue;
-            }
-
-            const int bit = 1 << (number - 1);
-            if ((row[i] & bit) || (col[j] & bit) || (table[i / 3][j / 3] & bit)) {
-                return false;
-            }
-
-            row[i] |= bit, col[j] |= bit, table[i / 3][j / 3] |= bit;
+        if (state.row[i] != mask) {
+            return false;
         }
     }
     return true;

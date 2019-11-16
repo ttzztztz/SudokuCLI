@@ -1,4 +1,3 @@
-#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <tuple>
@@ -7,57 +6,6 @@
 #include "game_control.h"
 #include "./command_color.h"
 #include "game_alg.h"
-
-
-void game_control::control() {
-    char ch = '\0';
-    std::cin >> ch;
-    if (ch == 'I' || ch == 'i') {
-        std::optional<std::tuple<int, int, int>> ans = input_offset();
-
-        if (ans == std::nullopt) {
-            print_notice("無効なコマンド");
-            return;
-        }
-
-        auto[x, y] = unsafe_calcOffset(ans.value());
-        if (readOnly[x][y]) {
-            print_notice("無効なコマンド");
-        } else {
-            std::optional<int> in = input_value();
-            if (in == std::nullopt) {
-                print_notice("無効なコマンド");
-                return;
-            }
-
-            map[x][y] = in.value();
-            if (game_alg::check_valid(this)) {
-                print_notice("操作の成功");
-            } else {
-                map[x][y] = -1;
-                print_notice("無効なコマンド");
-            }
-        }
-
-    } else if (ch == 'D' || ch == 'd') {
-        std::optional<std::tuple<int, int, int>> ans = input_offset();
-
-        if (ans == std::nullopt) {
-            print_notice("無効なコマンド");
-            return;
-        }
-
-        auto[x, y] = unsafe_calcOffset(ans.value());
-        if (readOnly[x][y]) {
-            print_notice("無効なコマンド");
-        } else {
-            print_notice("操作の成功");
-        }
-
-    } else {
-        print_notice("無効なコマンド");
-    }
-}
 
 void game_control::init() {
     std::fstream fs;
@@ -68,11 +16,9 @@ void game_control::init() {
                 char ch = '\0';
                 fs >> ch;
 
-                if (ch == '.') {
-                    map[i][j] = -1;
-                } else {
-                    map[i][j] = ch - '1';
-                    readOnly[i][j] = true;
+                if (ch != '.') {
+                    this->state.unsafe_place_number(i, j, ch - '0');
+                    this->state.read_only[i][j] = true;
                 }
             }
         }
@@ -87,23 +33,22 @@ void game_control::interactive(const std::string &extra) {
     std::cout << "D: 一つの数を削除" << std::endl;
 
     if (!extra.empty()) {
-        std::cout << std::endl << std::endl;
-        std::cout << MAGENTA << extra;
+        std::cout << std::endl;
+        std::cout << MAGENTA << extra << std::endl;
     }
 }
 
 void game_control::print() {
-    std::cout << "U201816816 の すうどくゲーム" << std::endl;
+    std::cout << RESET << "U201816816 の すうどくゲーム" << std::endl;
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-            if (readOnly[i][j]) {
-                std::cout << BLUE << map[i][j];
+            if (this->state.read_only[i][j]) {
+                std::cout << BLUE << this->state.map[i][j];
             } else {
-                std::cout << RED;
-                if (map[i][j] == -1) {
-                    std::cout << "?";
+                if (this->state.map[i][j] == -1) {
+                    std::cout << RED << "?";
                 } else {
-                    std::cout << map[i][j];
+                    std::cout << GREEN << this->state.map[i][j];
                 }
             }
 
@@ -118,40 +63,9 @@ void game_control::print() {
     }
 }
 
-game_control::game_control() : map{}, readOnly{} {
-    std::memset(this->map, 0xff, sizeof(this->map));
-    std::memset(this->readOnly, 0, sizeof(readOnly));
-}
+game_control::game_control() : state(game_state()) {}
 
-std::optional<std::tuple<int, int, int>> game_control::input_offset() {
-    int block, x, y;
-    std::cout << std::endl << YELLOW;
-
-    std::cout << "チェック番号 (1~9) を入力してください" << std::endl;
-    std::cin >> block;
-    if (block <= 0 || block >= 10) {
-        print_notice("無効な入力");
-        return std::nullopt;
-    }
-
-    std::cout << "相対的な横軸 (1~3) を入力してください" << std::endl;
-    std::cin >> x;
-    if (x <= 0 || x >= 4) {
-        print_notice("無効な入力");
-        return std::nullopt;
-    }
-
-    std::cout << "相対的な縦軸 (1~3) を入力してください" << std::endl;
-    std::cin >> y;
-    if (y <= 0 || y >= 4) {
-        print_notice("無効な入力");
-        return std::nullopt;
-    }
-
-    return std::optional<std::tuple<int, int, int>>{{block, x, y}};
-}
-
-std::pair<int, int> game_control::unsafe_calcOffset(std::tuple<int, int, int> in) {
+std::pair<int, int> game_control::unsafe_calc_offset(std::tuple<int, int, int> in) {
     const int startX[] = {0, 0, 0, 3, 3, 3, 6, 6, 6};
     const int startY[] = {0, 3, 6, 0, 3, 6, 0, 3, 6};
 
@@ -161,18 +75,114 @@ std::pair<int, int> game_control::unsafe_calcOffset(std::tuple<int, int, int> in
     };
 }
 
-void game_control::print_notice(const std::string &extra) {
-    print();
-    interactive(extra);
-}
+void game_control::loop() {
+    bool isWin = false;
+    std::string infoMessage;
 
-std::optional<int> game_control::input_value() {
-    int val;
-    std::cin >> val;
-    if (val <= 0 || val >= 10) {
-        print_notice("無効な入力");
-        return std::nullopt;
+    auto input_value = [&infoMessage]() -> std::optional<int> {
+        std::cout << YELLOW << "数値 (1~9) を入力してください" << std::endl;
+        int val;
+        std::cin >> val;
+        if (val <= 0 || val >= 10) {
+            infoMessage = "無効な入力";
+            return std::nullopt;
+        }
+
+        return std::optional<int>{val};
+    };
+
+    auto input_offset = [&infoMessage]() -> std::optional<std::tuple<int, int, int>> {
+        int block, x, y;
+        std::cout << std::endl << YELLOW;
+
+        std::cout << "チェック番号 (1~9) を入力してください" << std::endl;
+        std::cin >> block;
+        if (block <= 0 || block >= 10) {
+            infoMessage = "無効な入力";
+            return std::nullopt;
+        }
+
+        std::cout << "相対的な横軸 (1~3) を入力してください" << std::endl;
+        std::cin >> x;
+        if (x <= 0 || x >= 4) {
+            infoMessage = "無効な入力";
+            return std::nullopt;
+        }
+
+        std::cout << "相対的な縦軸 (1~3) を入力してください" << std::endl;
+        std::cin >> y;
+        if (y <= 0 || y >= 4) {
+            infoMessage = "無効な入力";
+            return std::nullopt;
+        }
+
+        return std::optional<std::tuple<int, int, int>>{{block, x, y}};
+    };
+
+
+    while (!isWin) {
+        print();
+        interactive(infoMessage);
+        infoMessage = "";
+
+        char ch = '\0';
+        std::cin >> ch;
+        if (ch == 'I' || ch == 'i') {
+            std::optional<std::tuple<int, int, int>> ans = input_offset();
+
+            if (ans == std::nullopt) {
+                infoMessage = "無効なコマンド";
+                continue;
+            }
+
+            auto[x, y] = unsafe_calc_offset(ans.value());
+            if (this->state.read_only[x][y]) {
+                infoMessage = "無効なコマンド";
+                continue;
+            } else {
+                std::optional<int> in = input_value();
+
+                if (in == std::nullopt) {
+                    infoMessage = "無効なコマンド";
+                    continue;
+                }
+
+                if (this->state.map[x][y] == -1 && game_alg::can_place(state, x, y, in.value())) {
+                    this->state.unsafe_place_number(x, y, in.value());
+
+                    if (game_alg::check_win(state)) {
+                        isWin = true;
+                        infoMessage = "勝利おめでとうございます";
+                    } else {
+                        infoMessage = "操作の成功";
+                    }
+
+                } else {
+                    infoMessage = "無効なコマンド";
+                }
+            }
+
+        } else if (ch == 'D' || ch == 'd') {
+            std::optional<std::tuple<int, int, int>> ans = input_offset();
+
+            if (ans == std::nullopt) {
+                infoMessage = "無効なコマンド";
+                continue;
+            }
+
+            auto[x, y] = unsafe_calc_offset(ans.value());
+            if (this->state.read_only[x][y]) {
+                infoMessage = "無効なコマンド";
+            } else {
+                this->state.unsafe_remove_number(x, y);
+                infoMessage = "操作の成功";
+            }
+
+        } else {
+            infoMessage = "無効なコマンド";
+        }
     }
 
-    return std::optional<int>{val};
+    print();
+    interactive(infoMessage);
 }

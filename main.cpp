@@ -4,7 +4,7 @@
 int main() {
     game_control g;
     g.init();
-    g.print_notice("おはようございます");
+    g.loop();
 
     return 0;
 }
