@@ -13,7 +13,7 @@ private:
 
     void print();
 
-    static void interactive(const std::string &extra);
+    static void interactive(const std::string &extra, bool isWin);
 
 public:
     friend class game_alg;

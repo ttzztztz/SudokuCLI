@@ -25,12 +25,15 @@ void game_control::init() {
     } else {
         throw std::runtime_error("invalid file");
     }
+//    game_alg::generate(this->state);
 }
 
-void game_control::interactive(const std::string &extra) {
-    std::cout << CYAN << "コマンド:" << std::endl;
-    std::cout << "I: 一つの数を追加" << std::endl;
-    std::cout << "D: 一つの数を削除" << std::endl;
+void game_control::interactive(const std::string &extra, bool isWin = false) {
+    if (!isWin) {
+        std::cout << CYAN << "コマンド:" << std::endl;
+        std::cout << "I: 一つの数を追加" << std::endl;
+        std::cout << "D: 一つの数を削除" << std::endl;
+    }
 
     if (!extra.empty()) {
         std::cout << std::endl;
@@ -80,7 +83,7 @@ void game_control::loop() {
     std::string infoMessage;
 
     auto input_value = [&infoMessage]() -> std::optional<int> {
-        std::cout << YELLOW << "数値 (1~9) を入力してください" << std::endl;
+        std::cout << YELLOW << "数値 (1~9) を入力してください : ";
         int val;
         std::cin >> val;
         if (val <= 0 || val >= 10) {
@@ -95,21 +98,21 @@ void game_control::loop() {
         int block, x, y;
         std::cout << std::endl << YELLOW;
 
-        std::cout << "チェック番号 (1~9) を入力してください" << std::endl;
+        std::cout << "チェック番号 (1~9) を入力してください : ";
         std::cin >> block;
         if (block <= 0 || block >= 10) {
             infoMessage = "無効な入力";
             return std::nullopt;
         }
 
-        std::cout << "相対的な横軸 (1~3) を入力してください" << std::endl;
+        std::cout << "相対的な横軸 (1~3) を入力してください : ";
         std::cin >> x;
         if (x <= 0 || x >= 4) {
             infoMessage = "無効な入力";
             return std::nullopt;
         }
 
-        std::cout << "相対的な縦軸 (1~3) を入力してください" << std::endl;
+        std::cout << "相対的な縦軸 (1~3) を入力してください : ";
         std::cin >> y;
         if (y <= 0 || y >= 4) {
             infoMessage = "無効な入力";
@@ -184,5 +187,5 @@ void game_control::loop() {
     }
 
     print();
-    interactive(infoMessage);
+    interactive(infoMessage, true);
 }

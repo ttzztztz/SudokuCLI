@@ -9,6 +9,8 @@ public:
     static bool can_place(const game_state &state, int i, int j, int number);
 
     static bool check_win(const game_state &state);
+
+    static void generate(game_state& state);
 };
 
 

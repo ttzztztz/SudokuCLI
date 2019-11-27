@@ -18,3 +18,7 @@ bool game_alg::check_win(const game_state &state) {
     }
     return true;
 }
+
+void game_alg::generate(game_state &state) {
+    
+}
