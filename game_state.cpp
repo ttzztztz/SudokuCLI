@@ -3,7 +3,7 @@
 #include "game_state.h"
 
 game_state::game_state() : col{}, row{}, table{}, read_only{}, map{} {
-    std::memset(this->map, 0, sizeof(this->map));
+    std::memset(this->map, 0xff, sizeof(this->map));
     std::memset(this->read_only, 0, sizeof(read_only));
 
     std::memset(this->col, 0, sizeof(col));
@@ -13,7 +13,7 @@ game_state::game_state() : col{}, row{}, table{}, read_only{}, map{} {
 
 void game_state::unsafe_remove_number(unsigned int i, unsigned int j) {
     const unsigned int previousNumber = map[i][j];
-    map[i][j] = 0;
+    map[i][j] = -1;
 
     row[i] ^= 1u << (previousNumber - 1);
     col[j] ^= 1u << (previousNumber - 1);

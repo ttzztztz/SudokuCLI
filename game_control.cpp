@@ -39,7 +39,7 @@ void game_control::print() {
             if (this->state.read_only[i][j]) {
                 std::cout << BLUE << this->state.map[i][j];
             } else {
-                if (this->state.map[i][j] == 0) {
+                if (this->state.map[i][j] == -1) {
                     std::cout << RED << "?";
                 } else {
                     std::cout << GREEN << this->state.map[i][j];
@@ -141,14 +141,14 @@ void game_control::loop() {
                     continue;
                 }
 
-                if (this->state.map[x][y] == 0 && game_alg::can_place(state, x, y, in.value())) {
+                if (this->state.map[x][y] == -1 && game_alg::can_place(state, x, y, in.value())) {
                     this->state.unsafe_place_number(x, y, in.value());
 
                     if (game_alg::check_win(state)) {
                         isWin = true;
                         unsigned int now_time = time(nullptr);
 
-                        infoMessage = "You WIN in " + std::to_string(now_time - this->start_time) + " time!!!";
+                        infoMessage = "You WIN in " + std::to_string(now_time - this->start_time) + " seconds time!!!";
                     } else {
                         infoMessage = "Operate successfully";
                     }

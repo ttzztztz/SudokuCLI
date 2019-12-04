@@ -9,7 +9,7 @@
 bool game_alg::can_place(const game_state &state, unsigned int i, unsigned int j, unsigned int number) {
     // O(1)
     const unsigned int bit = 1u << (number - 1u);
-    return !((state.row[i] & bit) || (state.col[j] & bit) || (state.table[i][j] & bit));
+    return !((state.row[i] & bit) || (state.col[j] & bit) || (state.table[i / 3][j / 3] & bit));
 }
 
 bool game_alg::check_win(const game_state &state) {
