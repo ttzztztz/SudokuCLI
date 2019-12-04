@@ -8,23 +8,6 @@
 #include "game_alg.h"
 
 void game_control::init() {
-//    std::fstream fs;
-//    fs.open("./test.in");
-//    if (fs.is_open()) {
-//        for (int i = 0; i < N; i++) {
-//            for (int j = 0; j < N; j++) {
-//                char ch = '\0';
-//                fs >> ch;
-//
-//                if (ch != '.') {
-//                    this->state.unsafe_place_number(i, j, ch - '0');
-//                    this->state.read_only[i][j] = true;
-//                }
-//            }
-//        }
-//    } else {
-//        throw std::runtime_error("invalid file");
-//    }
     game_alg::generate(this->state);
 }
 
@@ -41,6 +24,7 @@ void game_control::interactive(const std::string &extra, bool isWin = false) {
 
 void game_control::print() {
     std::cout << RESET << "U201816816 Sudoku Game" << std::endl;
+
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
             if (this->state.read_only[i][j]) {
@@ -120,7 +104,6 @@ void game_control::loop() {
 
                 return std::optional<std::tuple<int, int, int>>{{block, x, y}};
             };
-
 
     while (!isWin) {
         print();

@@ -1,13 +1,9 @@
 #include <random>
-#include <iostream>
 #include <vector>
 #include <algorithm>
 #include <functional>
-#include <ctime>
 
 #include "game_alg.h"
-
-#define MAX_RANDOM_GENERATE_FUNCTION_CALL_TIME 220
 
 bool game_alg::can_place(const game_state &state, int i, int j, int number) {
     // O(1)
@@ -28,43 +24,97 @@ bool game_alg::check_win(const game_state &state) {
 
 // must input a empty state !!!
 void game_alg::generate(game_state &state) {
-    int call_time = 0;
+    const int MAX_CALL_RANDOM_ARRAY_GENERATE_TIMES = 220;
+    std::vector<std::vector<int>> current_state(9, std::vector<int>(9, 0));
+    int current_call_times = 0;
 
-    std::function<std::vector<int>()> generate_random_permutation = [&]() -> std::vector<int> {
-        std::vector<int> seed = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-        std::random_shuffle(seed.begin(), seed.end());
-        call_time++;
+    std::function<std::vector<int>(void)> random_array_generator = [&]() -> std::vector<int> {
+        std::vector<int> result{1, 2, 3, 4, 5, 6, 7, 8, 9};
+        current_call_times++;
 
-        return seed;
+        std::random_device random_device;
+        std::mt19937 random_generator(random_device());
+        std::shuffle(result.begin(), result.end(), random_generator);
+
+        return result;
+    };
+
+    std::function<bool(int, int, std::vector<int>)> try_input_val = [&current_state]
+            (int i, int j, const std::vector<int>& random_array) -> bool {
+        std::function<bool(int, int)> check_valid = [&current_state](int i, int j) -> bool {
+            std::function<bool(int, int)> check_conflict_row = [&current_state](int i, int j) -> bool {
+                const int val = current_state[i][j];
+                for (int k = 0; k < i; k++) {
+                    if (current_state[k][j] == val) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+            std::function<bool(int, int)> check_conflict_column = [&current_state](int i, int j) -> bool {
+                const int val = current_state[i][j];
+                for (int k = 0; k < j; k++) {
+                    if (current_state[i][k] == val) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+            std::function<bool(int, int)> check_conflict_block = [&current_state](int i, int j) -> bool {
+                const int base_i = i / 3 * 3, base_j = j / 3 * 3, val = current_state[i][j];
+                for (int a = 0; a < 3; a++) {
+                    for (int b = 0; b < 3; b++) {
+                        if (current_state[base_i + a][base_j + b] == 0 || (base_i + a == i && base_j + b == j)) {
+                            continue;
+                        }
+
+                        if (current_state[base_i + a][base_j + b] == val) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            };
+
+            return check_conflict_block(i, j) && check_conflict_column(i, j) && check_conflict_row(i, j);
+        };
+
+        for (int k = 0; k < 9; k++) {
+            current_state[i][j] = random_array[k];
+            if (check_valid(i, j)) {
+                return true;
+            }
+        }
+        return false;
     };
 
     for (int i = 0; i < 9; i++) {
         if (i == 0) {
-            state = game_state();
-
-            call_time = 0;
-            std::vector<int> permutation = generate_random_permutation();
-            for (int j = 0; j < 9; j++) {
-                state.unsafe_place_number(i, j, permutation[j]);
-            }
+            current_call_times = 0;
+            current_state[0] = random_array_generator();
         } else {
-            std::vector<int> permutation = generate_random_permutation();
-            if (call_time > MAX_RANDOM_GENERATE_FUNCTION_CALL_TIME) {
-                i = -1;
-                continue;
-            }
+            std::vector<int> random_array = random_array_generator();
 
             for (int j = 0; j < 9; j++) {
-                if (!game_alg::can_place(state, i, j, permutation[j])) {
-                    for (int k = 0; k < j; k++) {
-                        state.unsafe_remove_number(i, k);
-                    }
+                if (current_call_times >= MAX_CALL_RANDOM_ARRAY_GENERATE_TIMES) {
+                    i = -1;
+                    current_state = std::vector<std::vector<int>>(9, std::vector<int>(9, 0));
+                    break;
+                }
 
-                    j = 9, i -= 1;
-                } else {
-                    state.unsafe_place_number(i, j, permutation[j]);
+                if (!try_input_val(i, j, random_array)) {
+                    current_state[i] = std::vector<int>(9, 0);
+                    i--;
+                    break;
                 }
             }
+        }
+    }
+
+    state = game_state();
+    for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 9; j++) {
+            state.unsafe_place_initial_number(i, j, current_state[i][j]);
         }
     }
 }

@@ -26,5 +26,4 @@ public:
 
 };
 
-
 #endif //SUDOKU_GAME_H

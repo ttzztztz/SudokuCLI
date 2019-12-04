@@ -10,15 +10,17 @@ private:
     bool read_only[N][N];
     int col[N], row[N], table[M][M];
 public:
-    friend class game_control;
-
-    friend class game_alg;
-
     game_state();
 
     void unsafe_place_number(int i, int j, int number);
 
+    void unsafe_place_initial_number(int i, int j, int number);
+
     void unsafe_remove_number(int i, int j);
+
+    friend class game_control;
+
+    friend class game_alg;
 };
 
 

@@ -28,3 +28,8 @@ void game_state::unsafe_place_number(int i, int j, int number) {
     col[j] |= 1 << (number - 1);
     table[i][j] |= 1 << (number - 1);
 }
+
+void game_state::unsafe_place_initial_number(int i, int j, int number) {
+    unsafe_place_number(i, j, number);
+    read_only[i][j] = true;
+}
