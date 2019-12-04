@@ -2,20 +2,21 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <array>
 
 #include "game_alg.h"
 
-bool game_alg::can_place(const game_state &state, int i, int j, int number) {
+bool game_alg::can_place(const game_state &state, unsigned int i, unsigned int j, unsigned int number) {
     // O(1)
-    const int bit = 1 << (number - 1);
+    const unsigned int bit = 1u << (number - 1u);
     return !((state.row[i] & bit) || (state.col[j] & bit) || (state.table[i][j] & bit));
 }
 
 bool game_alg::check_win(const game_state &state) {
     // O(N)
-    const int mask = (1 << N) - 1;
-    for (int i = 0; i < N; i++) {
-        if (state.row[i] != mask) {
+    const unsigned int mask = (1u << N) - 1u;
+    for (unsigned int i : state.row) {
+        if (i != mask) {
             return false;
         }
     }
@@ -23,7 +24,7 @@ bool game_alg::check_win(const game_state &state) {
 }
 
 // must input a empty state !!!
-void game_alg::generate(game_state &state) {
+void game_alg::generate(game_state &state, const int difficulty) {
     const int MAX_CALL_RANDOM_ARRAY_GENERATE_TIMES = 220;
     std::vector<std::vector<int>> current_state(9, std::vector<int>(9, 0));
     int current_call_times = 0;
@@ -40,7 +41,7 @@ void game_alg::generate(game_state &state) {
     };
 
     std::function<bool(int, int, std::vector<int>)> try_input_val = [&current_state]
-            (int i, int j, const std::vector<int>& random_array) -> bool {
+            (int i, int j, const std::vector<int> &random_array) -> bool {
         std::function<bool(int, int)> check_valid = [&current_state](int i, int j) -> bool {
             std::function<bool(int, int)> check_conflict_row = [&current_state](int i, int j) -> bool {
                 const int val = current_state[i][j];
@@ -112,10 +113,81 @@ void game_alg::generate(game_state &state) {
     }
 
     state = game_state();
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
-            state.unsafe_place_initial_number(i, j, current_state[i][j]);
-        }
-    }
+
+    std::function<int(int, int)> generate_one_random_number = [](int lower_bound, int upper_bound) -> int {
+        std::random_device random_device;
+        std::default_random_engine random_engine(random_device());
+        std::uniform_int_distribution random_distribution(lower_bound, upper_bound);
+        return random_distribution(random_engine);
+    };
+
+    std::array<std::function<void(game_state &)>, 3> difficult_remove_block_number{
+            [&generate_one_random_number, &current_state](game_state &state) -> void {
+                std::array<std::pair<int, int>, 9> remove_per_block{};
+
+                int block_count = 0;
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        remove_per_block[block_count++] = {generate_one_random_number(i * 3 + 0, i * 3 + 2),
+                                                           generate_one_random_number(j * 3 + 0, j * 3 + 2)};
+                    }
+                }
+
+                for (int i = 0; i < 9; i++) {
+                    for (int j = 0; j < 9; j++) {
+                        if (std::find(remove_per_block.begin(), remove_per_block.end(), std::make_pair(i, j)) ==
+                            remove_per_block.end()) {
+                            state.unsafe_place_initial_number(i, j, current_state[i][j]);
+                        }
+                    }
+                }
+            },
+            [&generate_one_random_number, &current_state](game_state &state) -> void {
+                std::array<std::pair<int, int>, 27> remove_per_block{};
+
+                int block_count = 0;
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        for (int k = 0; k < 3; k++) {
+                            remove_per_block[block_count++] = {generate_one_random_number(i * 3 + 0, i * 3 + 2),
+                                                               generate_one_random_number(j * 3 + 0, j * 3 + 2)};
+                        }
+                    }
+                }
+
+                for (int i = 0; i < 9; i++) {
+                    for (int j = 0; j < 9; j++) {
+                        if (std::find(remove_per_block.begin(), remove_per_block.end(), std::make_pair(i, j)) ==
+                            remove_per_block.end()) {
+                            state.unsafe_place_initial_number(i, j, current_state[i][j]);
+                        }
+                    }
+                }
+            },
+            [&generate_one_random_number, &current_state](game_state &state) -> void {
+                std::array<std::pair<int, int>, 54> remove_per_block{};
+
+                int block_count = 0;
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        for (int k = 0; k < 6; k++) {
+                            remove_per_block[block_count++] = {generate_one_random_number(i * 3 + 0, i * 3 + 2),
+                                                               generate_one_random_number(j * 3 + 0, j * 3 + 2)};
+                        }
+                    }
+                }
+
+                for (int i = 0; i < 9; i++) {
+                    for (int j = 0; j < 9; j++) {
+                        if (std::find(remove_per_block.begin(), remove_per_block.end(), std::make_pair(i, j)) ==
+                            remove_per_block.end()) {
+                            state.unsafe_place_initial_number(i, j, current_state[i][j]);
+                        }
+                    }
+                }
+            }
+    };
+
+    difficult_remove_block_number[difficulty](state);
 }
 

@@ -1,4 +1,3 @@
-#include <iostream>
 #include "game_control.h"
 
 int main() {

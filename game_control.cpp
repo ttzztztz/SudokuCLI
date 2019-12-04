@@ -8,7 +8,14 @@
 #include "game_alg.h"
 
 void game_control::init() {
-    game_alg::generate(this->state);
+    int difficulty = 0;
+
+    do {
+        std::cout << "Difficulty: [0]Easy [1]Medium [2]Hard";
+        std::cin >> difficulty;
+    } while (difficulty < 0 || difficulty > 2);
+
+    game_alg::generate(this->state, difficulty);
 }
 
 void game_control::interactive(const std::string &extra, bool isWin = false) {
@@ -30,7 +37,7 @@ void game_control::print() {
             if (this->state.read_only[i][j]) {
                 std::cout << BLUE << this->state.map[i][j];
             } else {
-                if (this->state.map[i][j] == -1) {
+                if (this->state.map[i][j] == 0) {
                     std::cout << RED << "?";
                 } else {
                     std::cout << GREEN << this->state.map[i][j];
@@ -132,7 +139,7 @@ void game_control::loop() {
                     continue;
                 }
 
-                if (this->state.map[x][y] == -1 && game_alg::can_place(state, x, y, in.value())) {
+                if (this->state.map[x][y] == 0 && game_alg::can_place(state, x, y, in.value())) {
                     this->state.unsafe_place_number(x, y, in.value());
 
                     if (game_alg::check_win(state)) {
