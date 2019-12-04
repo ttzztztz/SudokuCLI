@@ -11,6 +11,9 @@ public:
     static bool check_win(const game_state &state);
 
     static void generate(game_state& state);
+
+private:
+    static bool __generate_dfs(game_state& state, int baseI, int baseJ, int i, int j);
 };
 
 
