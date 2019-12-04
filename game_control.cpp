@@ -2,6 +2,7 @@
 #include <tuple>
 #include <optional>
 #include <functional>
+#include <ctime>
 
 #include "game_control.h"
 #include "./command_color.h"
@@ -16,6 +17,7 @@ void game_control::init() {
     } while (difficulty < 0 || difficulty > 2);
 
     game_alg::generate(this->state, difficulty);
+    this->start_time = time(nullptr);
 }
 
 void game_control::interactive(const std::string &extra, bool isWin = false) {
@@ -55,7 +57,7 @@ void game_control::print() {
     }
 }
 
-game_control::game_control() : state(game_state()) {}
+game_control::game_control() : state(game_state()), start_time(0) {}
 
 std::pair<int, int> game_control::unsafe_calc_offset(std::tuple<int, int, int> in) {
     const int startX[] = {0, 0, 0, 3, 3, 3, 6, 6, 6};
@@ -144,7 +146,9 @@ void game_control::loop() {
 
                     if (game_alg::check_win(state)) {
                         isWin = true;
-                        infoMessage = "You WIN!!!";
+                        unsigned int now_time = time(nullptr);
+
+                        infoMessage = "You WIN in " + std::to_string(now_time - this->start_time) + " time!!!";
                     } else {
                         infoMessage = "Operate successfully";
                     }

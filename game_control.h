@@ -8,6 +8,7 @@
 class game_control {
 private:
     game_state state;
+    unsigned int start_time{};
 
     static std::pair<int, int> unsafe_calc_offset(std::tuple<int, int, int> in);
 
